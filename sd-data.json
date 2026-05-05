@@ -70,14 +70,6 @@
     ],
     "defects": [
       {
-        "id": 1,
-        "date": "2024-11-05",
-        "description": "Prasklina na fasádě – severní strana",
-        "status": "V řešení",
-        "cost": 0,
-        "note": "Čeká se na nabídku"
-      },
-      {
         "id": 2,
         "date": "2024-08-12",
         "description": "Výměna ventilu na topení",
