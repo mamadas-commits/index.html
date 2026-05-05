@@ -42,24 +42,7 @@
         "note": "Kotel Vaillant 24 kW"
       }
     ],
-    "contacts": [
-      {
-        "id": 2,
-        "name": "GasServis Pardubice",
-        "phone": "+420 466 654 321",
-        "email": "info@gasservis.cz",
-        "category": "Plyn/Topení",
-        "note": "Havarijní linka 24/7"
-      },
-      {
-        "id": 3,
-        "name": "Požární technika Brno",
-        "phone": "+420 545 111 222",
-        "email": "revize@pozarni.cz",
-        "category": "Hasicí technika",
-        "note": ""
-      }
-    ],
+    "contacts": [],
     "defects": [],
     "finances": [
       {
