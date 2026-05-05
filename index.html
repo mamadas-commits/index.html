@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="cs">
 <head>
 <meta charset="utf-8"/>
@@ -180,7 +180,12 @@ function mut(fn){
   svT=setTimeout(function(){
     DB.save(S.user,S.data).then(function(ok){
       var sv=document.getElementById('sv');
-      if(sv){sv.style.color=ok?'#22c55e':'#ef4444';sv.textContent=ok?'✓ Uloženo':'⚠ Chyba připojení';sv.style.opacity='1';setTimeout(function(){sv.style.opacity='0';},2000);}
+      if(sv){
+        sv.style.color=ok?'#22c55e':'#ef4444';
+        sv.textContent=ok?'✓ Uloženo':'⚠ Chyba - data velká?';
+        sv.style.opacity='1';
+        setTimeout(function(){sv.style.opacity='0';},3000);
+      }
     });
   },600);
   render();
@@ -378,14 +383,43 @@ function handleDrop(e){e.preventDefault();var dz=document.querySelector(".dz");i
 function handleFileInput(inp){processFiles(Array.from(inp.files));inp.value=""}
 function processFiles(files){
   files.forEach(function(file){
-    var reader=new FileReader();
-    reader.onload=function(e){
-      var n=file.name.toLowerCase();
-      var type=n.includes("reviz")?"Revizní zpráva":n.includes("protokol")?"Protokol":n.includes("smlouva")||n.includes("pojist")?"Smlouva":"Jiné";
-      mut(function(d){d.documents.push({id:uid(),name:file.name,type:type,date:today(),note:"",fileData:e.target.result,fileType:file.type,fileSize:file.size})});
-    };
-    reader.readAsDataURL(file);
+    var n=file.name.toLowerCase();
+    var type=n.includes("reviz")?"Revizní zpráva":n.includes("protokol")?"Protokol":n.includes("smlouva")||n.includes("pojist")?"Smlouva":"Jiné";
+    showSaveStatus("⏳ Nahrávám...", "#f97316");
+    if(file.type.startsWith("image/")){
+      // Compress image before saving
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=new Image();
+        img.onload=function(){
+          var canvas=document.createElement("canvas");
+          var MAX=1200;
+          var w=img.width, h=img.height;
+          if(w>h&&w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+          else if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+          canvas.width=w; canvas.height=h;
+          canvas.getContext("2d").drawImage(img,0,0,w,h);
+          var compressed=canvas.toDataURL("image/jpeg",0.75);
+          var sz=Math.round(compressed.length*0.75);
+          mut(function(d){d.documents.push({id:uid(),name:file.name,type:type,date:today(),note:"",fileData:compressed,fileType:"image/jpeg",fileSize:sz})});
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Non-image file — read as-is
+      var reader=new FileReader();
+      reader.onload=function(e){
+        mut(function(d){d.documents.push({id:uid(),name:file.name,type:type,date:today(),note:"",fileData:e.target.result,fileType:file.type,fileSize:file.size})});
+      };
+      reader.readAsDataURL(file);
+    }
   });
+}
+
+function showSaveStatus(msg, color){
+  var sv=document.getElementById("sv");
+  if(sv){sv.style.color=color||"#22c55e";sv.textContent=msg;sv.style.opacity="1";}
 }
 function dlDoc(id){var d=(S.data.documents||[]).find(function(x){return x.id===id});if(!d||!d.fileData)return;var a=document.createElement("a");a.href=d.fileData;a.download=d.name;a.click()}
 
@@ -478,3 +512,505 @@ if('serviceWorker' in navigator){
 </script>
 </body>
 </html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0f1117"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Správce"/>
+<title>Správce domu</title>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAE/UlEQVR4nO3dPU4cQRCG4d4VgQ9AhIRERkqCSMl9AV+DAxBxAK7hCzgnRSSkZEhIRD6AMxzYg4Zl56eZnq6qr98ntc32Tr8uF2DZm1TI0fHpW6mPhfa8vjxtSnycRR+EiLGGJXFn/0IiRk25cW9zfjIxo7bc5mbVT8jwYM60npzQxAwv5rQ4GjQxw5upJgeDJmZ4Ndbm3qCJGd4NNfopaGJGFPtazfqyHeDdh6CZzohmt9nt0A8AUfTbZeWAFIKGlG1KrBuIr2uYCQ0pBA0pG9YNKGFCQwpBQwpBV/Lt54X1EZpA0BV0MRP1+vikcEVjAf/5cV/xJO1gQq9kahozrddB0CuYGytRl0fQheVGStRlsUMXUiJM9urlmNAFlJqyTOvlCHqh0hES9TIEvcBa8RH117FDf0HN4Nir8zChM9WenkzrPASdwSouop6PlWMGL0Gxfkwj6AleYu4j7GGsHCM8xpyS33N5QNADvEfj/XxWWDl2RAuF9eMjgu6JFnMfYf/DyvFf5JhTin/+Upqf0GohtD6pm57QajGnpPmecjQ7oVu4+BandZMTuoWYU2rnffY1NaFbvOCU2prUzUzoVmNOqa333sSEbulCp6hPa/kJTcwfqT8P2QmtfnFLqU5qyaCJeT61sOVWDmLOo/a8ZCa02sXUpjKpJSY0MS+n8gzDT2iVi/Ak8rQOPaGJeR2Rn2vICR35gUcScVKHm9DEXE/EZx1qQkd8wCqiTOsQQROyDxGidr9yELMfEe7CddARHmBrvN+J25XD+4ODzxXEXdCEHIu3qF2tHMQcj7c7cxO0tweD+TzdnYuVw9MDwTLWK4hp0ISsyTJqs5WDmHVZ3q1J0MSsz+qOq64chNymmitItQlNzO2qefdVgiZm1Gpg9aCJGZ0aLay2QxMyxqy1V68yoYkZU9ZqxPw7hedXj5Yvj8Iebs9MX9/N3+UASiBoSDmwPsBX3N2c/Kr1WpfXz99rvdYcLb/3OcJN6JoXavF6Y1p+73OFCtrqAXu42Jbfe45QQQNTCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSCBpSQv5DMwYO725OrP+HycOU0m/jM7hH0OMOrQ+wozsPYQ9g5YAUgh7mbTr3eT6bqVBBR/zHA6OL9sxDBZ1SvAccWcRnHfKTwhoP2sFXNUZFjK2GcBMaGEPQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkELQkGIe9MPtmfURUIiHuzQPGijJRdAefmdjGS93uH19edpYHwIo4fXlaeNiQqfk53d45/L6+cL6DEO8nc3T3R1YH6CvezDnV4+m58A8nkLuvK8bR8enb5YH2cdL2Hc3J/fWZ0jJz2T2GHK3OrsOGpirC9rNDg2U8B40X+1AVP12t0M/AESw2ywrB6R8CpopjSj2tbp3QhM1vBtqdHDlIGp4Ndbm6A5N1PBmqsnJTwqJGl7MaTErVr6bCAs5QzXry3ZMa9SW29yiQJnYWMOSwVls4hI3lij1p/9fxw1WIhHMqVAAAAAASUVORK5CYII="/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0f1117;color:#e2e8f0;font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;overscroll-behavior:none}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0f1117}::-webkit-scrollbar-thumb{background:#2a2f45;border-radius:2px}
+input,select,textarea,button{font-family:inherit}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5}
+.card{background:#1a1d27;border:1px solid #2a2f45;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.tile{background:#1a1d27;border:1px solid #2a2f45;border-radius:14px;padding:16px 14px;cursor:pointer;transition:border-color .2s;user-select:none}
+.tile:active,.tile:hover{border-color:#4f8ef7!important}
+button:active{opacity:.7}
+.chip{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-block}
+.dz{border:2px dashed #2a2f45;border-radius:14px;padding:32px 20px;text-align:center;transition:all .2s;cursor:pointer;background:#0f1117;margin-bottom:16px}
+.dz.over,.dz:hover{border-color:#4f8ef7;background:#1e3a6e22}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+
+/* === SPRÁVCE DOMU PWA === */
+
+const AUTH={
+  KEY:"sd_users",DK:function(u){return"sd_data_"+u},
+  getUsers:function(){try{return JSON.parse(localStorage.getItem(this.KEY)||"[]")}catch(e){return[]}},
+  saveUsers:function(u){localStorage.setItem(this.KEY,JSON.stringify(u))},
+  addUser:function(u,p){var us=this.getUsers();if(us.find(function(x){return x.username===u}))return false;us.push({username:u,ph:this.hash(p),at:new Date().toISOString()});this.saveUsers(us);return true},
+  verify:function(u,p){var h=this.hash(p);return this.getUsers().find(function(x){return x.username===u&&x.ph===h})},
+  hash:function(s){var h=0x811c9dc5;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0}return h.toString(16)},
+  session:{get:function(){return localStorage.getItem("sd_session")},set:function(u){localStorage.setItem("sd_session",u)},clear:function(){localStorage.removeItem("sd_session")}}
+};
+
+/* GITHUB GIST CONFIG */
+var GH_TOKEN=localStorage.getItem('sd_gh_token')||'';
+var GH_GIST_ID=localStorage.getItem('sd_gist_id')||'';
+
+function ghRequest(method, path, body){
+  return fetch('https://api.github.com'+path,{
+    method:method,
+    headers:{
+      'Authorization':'Bearer '+GH_TOKEN,
+      'Accept':'application/vnd.github+json',
+      'Content-Type':'application/json',
+      'User-Agent':'SpravceDomu/1.0'
+    },
+    body:body?JSON.stringify(body):undefined
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error(t)});
+    return r.json();
+  });
+}
+
+function ensureGist(){
+  if(GH_GIST_ID) return Promise.resolve(GH_GIST_ID);
+  // Create new gist
+  return ghRequest('POST','/gists',{
+    description:'Správce domu – data aplikace',
+    public:false,
+    files:{'sd-data.json':{content:JSON.stringify({users:{}},null,2)}}
+  }).then(function(g){
+    GH_GIST_ID=g.id;
+    localStorage.setItem('sd_gist_id',GH_GIST_ID);
+    return GH_GIST_ID;
+  });
+}
+
+var DB={
+  load:function(u){
+    return ensureGist().then(function(gid){
+      return ghRequest('GET','/gists/'+gid);
+    }).then(function(gist){
+      var raw=gist.files['sd-data.json']&&gist.files['sd-data.json'].content;
+      if(!raw)return DB.def();
+      var all=JSON.parse(raw);
+      return (all.users&&all.users[u])||DB.def();
+    }).catch(function(e){
+      console.error('Load error',e);
+      return DB.def();
+    });
+  },
+  save:function(u,d){
+    return ensureGist().then(function(gid){
+      // First read current data, then merge
+      return ghRequest('GET','/gists/'+gid).then(function(gist){
+        var raw=gist.files['sd-data.json']&&gist.files['sd-data.json'].content;
+        var all=raw?JSON.parse(raw):{users:{}};
+        if(!all.users)all.users={};
+        all.users[u]=d;
+        return ghRequest('PATCH','/gists/'+gid,{
+          files:{'sd-data.json':{content:JSON.stringify(all,null,2)}}
+        });
+      });
+    }).then(function(){return true})
+    .catch(function(e){console.error('Save error',e);return false});
+  },
+  def:function(){return{
+    revisions:[
+      {id:1,type:"Elektroinstalace",lastDate:"2023-03-15",intervalYears:5,company:"Elektro Nov\u00e1k s.r.o.",note:"Dle \u010cSN 33 1500"},
+      {id:2,type:"Hromosvod",lastDate:"2022-11-10",intervalYears:4,company:"Bleskojist Praha",note:""},
+      {id:3,type:"Hasi\u010d\u00ed p\u0159\u00edstroje",lastDate:"2024-01-20",intervalYears:1,company:"Po\u017e\u00e1rn\u00ed technika Brno",note:"5x pr\u00e1\u0161kov\u00fd, 2x CO2"},
+      {id:4,type:"St\u0159echa / fas\u00e1da",lastDate:"2023-06-01",intervalYears:3,company:"",note:"Vizu\u00e1ln\u00ed prohl\u00eddka"},
+      {id:5,type:"Centr\u00e1ln\u00ed vyt\u00e1p\u011bn\u00ed - plyn",lastDate:"2024-02-14",intervalYears:1,company:"GasServis Pardubice",note:"Kotel Vaillant 24kW"}
+    ],
+    contacts:[
+      {id:1,name:"Elektro Nov\u00e1k s.r.o.",phone:"+420 466 123 456",email:"novak@elektro.cz",category:"Elektro",note:""},
+      {id:2,name:"GasServis Pardubice",phone:"+420 466 654 321",email:"info@gasservis.cz",category:"Plyn/Top\u00een\u00ed",note:"Havarijní linka 24/7"},
+      {id:3,name:"Po\u017e\u00e1rn\u00ed technika Brno",phone:"+420 545 111 222",email:"revize@pozarni.cz",category:"Hasi\u010d\u00ed technika",note:""}
+    ],
+    defects:[
+      {id:1,date:"2024-11-05",description:"Prasklina na fas\u00e1d\u011b \u2013 severn\u00ed strana",status:"V \u0159e\u0161en\u00ed",cost:0,note:"\u010cek\u00e1 se na nab\u00eddku"},
+      {id:2,date:"2024-08-12",description:"V\u00fdm\u011bna ventilu na top\u00een\u00ed",status:"Vy\u0159e\u0161eno",cost:1850,note:"GasServis fa 2024/445"}
+    ],
+    finances:[
+      {id:1,date:"2024-02-14",description:"Revize kotle",category:"Revize",amount:3200},
+      {id:2,date:"2024-01-20",description:"Revize hasi\u010d\u00edch p\u0159\u00edstroj\u016f",category:"Revize",amount:2100},
+      {id:3,date:"2024-08-12",description:"Oprava ventilu top\u00een\u00ed",category:"Oprava",amount:1850}
+    ],
+    documents:[
+      {id:1,name:"Revizn\u00ed zpr\u00e1va elektro 2023.pdf",type:"Revizn\u00ed zpr\u00e1va",date:"2023-03-15",note:"Plat\u00ed do 2028",fileData:null,fileType:null,fileSize:null}
+    ]
+  }}
+};
+
+var uid=function(){return Date.now()+Math.floor(Math.random()*9999)};
+var fmt=function(d){return new Date(d).toLocaleDateString("cs-CZ")};
+var today=function(){return new Date().toISOString().slice(0,10)};
+var nextRev=function(l,y){var d=new Date(l);d.setFullYear(d.getFullYear()+y);return d};
+var daysUntil=function(d){return Math.ceil((new Date(d)-new Date().setHours(0,0,0,0))/86400e3)};
+var getStatus=function(d){return d<0?"overdue":d<=30?"critical":d<=90?"warning":"ok"};
+var esc=function(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")};
+var fmtSize=function(b){return b>1048576?(b/1048576).toFixed(1)+" MB":b>1024?Math.round(b/1024)+" KB":b+" B"};
+
+var ST={
+  ok:     {label:"V pořádku",color:"#22c55e",bg:"#14532d",icon:"✓"},
+  warning:{label:"Blíží se", color:"#f97316",bg:"#7c2d12",icon:"!"},
+  critical:{label:"Kritické",color:"#ef4444",bg:"#7f1d1d",icon:"!!"},
+  overdue:{label:"Po termínu",color:"#ef4444",bg:"#7f1d1d",icon:"✗"}
+};
+
+var IS="background:#0f1117;border:1px solid #2a2f45;border-radius:10px;color:#e2e8f0;padding:11px 14px;font-size:16px;width:100%;outline:none;";
+var BS=function(v){
+  var styles={
+    primary:"background:#4f8ef7;color:#fff;border:none;",
+    danger:"background:#7f1d1d;color:#ef4444;border:1px solid #ef444444;",
+    ghost:"background:transparent;color:#94a3b8;border:1px solid #2a2f45;",
+    success:"background:#14532d;color:#22c55e;border:1px solid #22c55e44;"
+  };
+  return (styles[v]||styles.primary)+"border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;"
+};
+
+var S={tab:"dashboard",data:null,df:"Vše",fy:new Date().getFullYear(),sq:"",user:null,aMode:"login",aErr:""};
+var svT=null;
+
+function initSession(){
+  var u=AUTH.session.get();
+  if(u&&AUTH.getUsers().find(function(x){return x.username===u})){
+    S.user=u;showLoading(true);
+    return DB.load(u).then(function(d){S.data=d;showLoading(false);});
+  }
+  return Promise.resolve();
+}
+function showLoading(on){
+  var el=document.getElementById('ld');
+  if(on&&!el){el=document.createElement('div');el.id='ld';el.style.cssText='position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px';el.innerHTML='<div style="font-size:48px">&#127968;</div><div style="color:#4f8ef7;font-size:16px;font-weight:600">Načítám data...</div>';document.body.appendChild(el);}
+  else if(!on&&el){el.remove();}
+}
+function mut(fn){
+  fn(S.data);clearTimeout(svT);
+  svT=setTimeout(function(){
+    DB.save(S.user,S.data).then(function(ok){
+      var sv=document.getElementById('sv');
+      if(sv){
+        sv.style.color=ok?'#22c55e':'#ef4444';
+        sv.textContent=ok?'✓ Uloženo':'⚠ Chyba - data velká?';
+        sv.style.opacity='1';
+        setTimeout(function(){sv.style.opacity='0';},3000);
+      }
+    });
+  },600);
+  render();
+}
+function flash(){var e=document.getElementById("sv");if(e){e.style.opacity="1";setTimeout(function(){e.style.opacity="0"},1500)}}
+function setTab(t){S.tab=t;window.scrollTo(0,0);render()}
+function logout(){AUTH.session.clear();S.user=null;S.data=null;render()}
+function g(id){var el=document.getElementById(id);return el?el.value:""}
+
+function renderSetup(){
+  document.getElementById('app').innerHTML=`
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#0f1117">
+    <div style="width:100%;max-width:400px">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="font-size:52px;margin-bottom:12px">🏢</div>
+        <div style="color:#e2e8f0;font-size:24px;font-weight:800">Správce domu</div>
+        <div style="color:#64748b;font-size:14px;margin-top:6px">Jednorázové nastavení</div>
+      </div>
+      <div style="background:#1a1d27;border:1px solid #2a2f45;border-radius:20px;padding:28px 24px">
+        <div style="color:#e2e8f0;font-weight:700;font-size:16px;margin-bottom:8px">GitHub token</div>
+        <div style="color:#64748b;font-size:13px;margin-bottom:16px;line-height:1.5">
+          Pro sdílení dat zadej GitHub Personal Access Token.<br>
+          Vytvoříš ho na: <a href="https://github.com/settings/tokens" target="_blank" style="color:#4f8ef7">github.com/settings/tokens</a><br>
+          → Generate new token (classic) → zaškrtni <b style="color:#e2e8f0">gist</b>
+        </div>
+        <input id="setup-token" type="password" placeholder="ghp_..." style="background:#0f1117;border:1px solid #2a2f45;border-radius:10px;color:#e2e8f0;padding:12px 14px;font-size:15px;width:100%;outline:none;margin-bottom:12px;" onkeydown="if(event.key==='Enter')saveSetup()"/>
+        <button onclick="saveSetup()" style="background:#4f8ef7;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:600;cursor:pointer;width:100%;">Uložit a pokračovat</button>
+      </div>
+      <div style="color:#64748b;font-size:11px;text-align:center;margin-top:14px">Token se uloží pouze v tomto prohlížeči</div>
+    </div>
+  </div>`;
+  setTimeout(()=>document.getElementById('setup-token')?.focus(),50);
+}
+
+function saveSetup(){
+  var t=(document.getElementById('setup-token')||{value:''}).value.trim();
+  if(!t||!t.startsWith('ghp_')){alert('Zadej platný token začínající ghp_');return}
+  GH_TOKEN=t;
+  localStorage.setItem('sd_gh_token',t);
+  render();
+}
+
+function showAuthErr(msg){
+  var el=document.getElementById('auth-err');
+  if(el){
+    el.textContent='⚠ '+msg;
+    el.style.display='block';
+  }
+}
+
+function renderAuth(){
+  var isL=S.aMode==="login";
+  var hasU=AUTH.getUsers().length>0;
+  document.getElementById("app").innerHTML=
+    '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">'+
+    '<div style="width:100%;max-width:380px">'+
+    '<div style="text-align:center;margin-bottom:36px"><div style="font-size:52px;margin-bottom:12px">🏢</div>'+
+    '<div style="color:#e2e8f0;font-size:26px;font-weight:800">Správce domu</div>'+
+    '<div style="color:#64748b;font-size:14px;margin-top:4px">Evidence a správa budovy</div></div>'+
+    '<div style="background:#1a1d27;border:1px solid #2a2f45;border-radius:20px;padding:28px 24px">'+
+    '<div style="display:flex;background:#0f1117;border-radius:10px;padding:4px;margin-bottom:24px">'+
+    '<button onclick="S.aMode=\'login\';S.aErr=\'\';render()" style="flex:1;background:'+(isL?"#1a1d27":"transparent")+';color:'+(isL?"#e2e8f0":"#64748b")+';border:none;border-radius:8px;padding:9px;font-size:14px;font-weight:'+(isL?700:400)+';cursor:pointer">Přihlásit se</button>'+
+    '<button onclick="S.aMode=\'register\';S.aErr=\'\';render()" style="flex:1;background:'+(!isL?"#1a1d27":"transparent")+';color:'+(!isL?"#e2e8f0":"#64748b")+';border:none;border-radius:8px;padding:9px;font-size:14px;font-weight:'+(!isL?700:400)+';cursor:pointer">Registrovat</button></div>'+
+    '<div style="display:flex;flex-direction:column;gap:12px">'+
+    '<div><label style="color:#64748b;font-size:12px;display:block;margin-bottom:6px">Uživatelské jméno</label>'+
+    '<input id="au" type="text" placeholder="správce" style="'+IS+'" autocomplete="username" autocapitalize="none"/></div>'+
+    '<div><label style="color:#64748b;font-size:12px;display:block;margin-bottom:6px">Heslo</label>'+
+    '<input id="ap" type="password" placeholder="••••••••" style="'+IS+'" onkeydown="if(event.key===\'Enter\')'+(isL?"doLogin()":"doReg()")+'"/></div>'+
+    (!isL?'<div><label style="color:#64748b;font-size:12px;display:block;margin-bottom:6px">Heslo znovu</label><input id="ap2" type="password" placeholder="••••••••" style="'+IS+'" onkeydown="if(event.key===\'Enter\')doReg()"/></div>':'')+
+    '</div>'+
+    (S.aErr?'<div style="background:#7f1d1d;border:1px solid #ef444444;border-radius:10px;padding:10px 14px;margin-top:14px;color:#ef4444;font-size:14px">⚠ '+esc(S.aErr)+'</div>':'')+
+    '<button onclick="'+(isL?"doLogin()":"doReg()")+'" style="'+BS("primary")+'width:100%;margin-top:18px;">'+(isL?"Přihlásit se":"Vytvořit účet")+'</button>'+
+    (isL&&!hasU?'<div style="color:#64748b;font-size:12px;text-align:center;margin-top:14px">Zatím žádný účet? Přepni na <b>Registrovat</b></div>':'')+
+    '</div><div style="color:#64748b;font-size:11px;text-align:center;margin-top:16px">Data jsou uložena pouze v tomto zařízení</div></div></div>';
+  setTimeout(function(){var el=document.getElementById("au");if(el)el.focus()},50);
+}
+
+function doLogin(){
+  var u=(document.getElementById("au")||{value:""}).value.trim();
+  var p=(document.getElementById("ap")||{value:""}).value;
+  if(!u||!p){showAuthErr("Vyplňte uživatelské jméno a heslo");return}
+  if(!AUTH.verify(u,p)){showAuthErr("Nesprávné jméno nebo heslo");return}
+  AUTH.session.set(u);S.user=u;showLoading(true);DB.load(u).then(function(d){S.data=d;showLoading(false);S.aErr="";render();});
+}
+function doReg(){
+  var u=(document.getElementById("au")||{value:""}).value.trim();
+  var p=(document.getElementById("ap")||{value:""}).value;
+  var p2=(document.getElementById("ap2")||{value:""}).value;
+  if(!u||!p){showAuthErr("Vyplňte všechna pole");return}
+  if(u.length<3){showAuthErr("Jméno musí mít alespoň 3 znaky");return}
+  if(p.length<4){showAuthErr("Heslo musí mít alespoň 4 znaky");return}
+  if(p!==p2){showAuthErr("Hesla se neshodují");return}
+  if(!AUTH.addUser(u,p)){showAuthErr("Toto uživatelské jméno je již obsazeno");return}
+  AUTH.session.set(u);S.user=u;showLoading(true);DB.load(u).then(function(d){S.data=d;showLoading(false);S.aErr="";render();});
+}
+
+function badge(s){var x=ST[s];return'<span class="chip" style="background:'+x.bg+';color:'+x.color+';border:1px solid '+x.color+'33">'+x.icon+' '+x.label+'</span>'}
+function lbl(t){return'<label style="color:#64748b;font-size:12px;margin-top:4px">'+t+'</label>'}
+function inp(id,ph,type,val){return'<input id="'+id+'" style="'+IS+'" placeholder="'+ph+'" type="'+(type||"text")+'" value="'+esc(val||"")+'"/>'}
+function ta(id,ph,val){return'<textarea id="'+id+'" style="'+IS+'resize:vertical;" rows="3" placeholder="'+ph+'">'+esc(val||"")+"</textarea>"}
+function sel(id,opts,val){return'<select id="'+id+'" style="'+IS+'">'+opts.map(function(o){return'<option value="'+esc(o)+'"'+(o===val?" selected":"")+">"+esc(o)+"</option>"}).join("")+"</select>"}
+
+function vDashboard(){
+  var en=(S.data.revisions||[]).map(function(r){var nx=nextRev(r.lastDate,r.intervalYears),dy=daysUntil(nx);return Object.assign({},r,{nx:nx,dy:dy,st:getStatus(dy)})}).sort(function(a,b){return a.dy-b.dy});
+  var urg=en.filter(function(r){return r.st!=="ok"});
+  var actD=(S.data.defects||[]).filter(function(d){return d.status!=="Vyřešeno"});
+  var totF=(S.data.finances||[]).reduce(function(s,r){return s+r.amount},0);
+  var tiles=[
+    {icon:"📋",label:"Revize",val:en.length,sub:en.filter(function(r){return r.st==="ok"}).length+" v pořádku",tab:"revize"},
+    {icon:"📞",label:"Kontakty",val:(S.data.contacts||[]).length,sub:"firmy a technici",tab:"kontakty"},
+    {icon:"🔧",label:"Aktivní závady",val:actD.length,sub:"v řešení / nové",tab:"zavady"},
+    {icon:"💰",label:"Výdaje celkem",val:totF.toLocaleString("cs-CZ")+" Kč",sub:"všechny roky",tab:"finance"}
+  ];
+  return '<div style="margin-bottom:20px"><div style="color:#64748b;font-size:13px">Přihlášen: <b style="color:#94a3b8">'+esc(S.user)+'</b></div><div style="color:#e2e8f0;font-size:22px;font-weight:800;margin-top:2px">Přehled</div></div>'+
+    (urg.length?'<div style="background:#ef444411;border:1px solid #ef444444;border-radius:14px;padding:14px 16px;margin-bottom:16px"><div style="color:#ef4444;font-weight:700;margin-bottom:10px;font-size:14px">⚠ Vyžaduje pozornost ('+urg.length+')</div>'+urg.map(function(r){return'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2f4533"><span style="color:#e2e8f0;font-size:14px">'+esc(r.type)+"</span>"+badge(r.st)+"</div>"}).join("")+"</div>":"")+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+
+    tiles.map(function(t){return'<div class="tile" onclick="setTab(\''+t.tab+'\')"><div style="font-size:26px">'+t.icon+'</div><div style="color:#e2e8f0;font-size:19px;font-weight:800;margin-top:6px">'+esc(String(t.val))+'</div><div style="color:#94a3b8;font-size:13px;font-weight:600">'+t.label+'</div><div style="color:#64748b;font-size:11px;margin-top:2px">'+t.sub+"</div></div>"}).join("")+"</div>"+
+    '<div style="color:#64748b;font-size:11px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Nejbližší revize</div>'+
+    en.slice(0,4).map(function(r){return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="color:#e2e8f0;font-weight:600;font-size:15px">'+esc(r.type)+'</div><div style="color:#64748b;font-size:12px;margin-top:2px">'+r.nx.toLocaleDateString("cs-CZ")+(r.company?" · "+esc(r.company):"")+"</div></div>"+badge(r.st)+"</div></div>"}).join("");
+}
+
+function vRevisions(){
+  var en=(S.data.revisions||[]).map(function(r){var nx=nextRev(r.lastDate,r.intervalYears),dy=daysUntil(nx);return Object.assign({},r,{nx:nx,dy:dy,st:getStatus(dy)})}).sort(function(a,b){return a.dy-b.dy});
+  var cnt={};Object.keys(ST).forEach(function(k){cnt[k]=en.filter(function(r){return r.st===k}).length});
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">📋 Revize a kontroly</h2><button style="'+BS("primary")+'" onclick="openM(\'rev-new\')">+ Přidat</button></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'+Object.entries(ST).map(function(e){var k=e[0],s=e[1];return'<div style="background:'+s.bg+';border:1px solid '+s.color+'33;border-radius:12px;padding:12px 14px"><div style="color:'+s.color+';font-size:22px;font-weight:800">'+cnt[k]+'</div><div style="color:'+s.color+';font-size:12px">'+s.label+"</div></div>"}).join("")+"</div>"+
+    en.map(function(r){
+      var tot=r.intervalYears*365,pct=Math.min(100,((tot-Math.max(0,r.dy))/tot)*100);
+      var bc=r.st==="ok"?"#22c55e":r.st==="warning"?"#f97316":"#ef4444";
+      var dc=r.dy<0?"#ef4444":r.dy<=30?"#f97316":"#22c55e";
+      var dl=r.dy<0?Math.abs(r.dy)+" dní po termínu":"zbývá "+r.dy+" dní";
+      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="color:#e2e8f0;font-weight:700;font-size:16px;margin-bottom:4px">'+esc(r.type)+"</div>"+(r.company?'<div style="color:#64748b;font-size:13px">'+esc(r.company)+"</div>":"")+"</div>"+badge(r.st)+"</div>"+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><div style="background:#0f1117;border-radius:8px;padding:8px 10px"><div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.8px">Poslední</div><div style="color:#94a3b8;font-size:13px;margin-top:2px">'+fmt(r.lastDate)+'</div></div><div style="background:#0f1117;border-radius:8px;padding:8px 10px"><div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.8px">Příští</div><div style="color:#94a3b8;font-size:13px;margin-top:2px">'+r.nx.toLocaleDateString("cs-CZ")+"</div></div></div>"+
+        '<div style="margin-top:10px;height:5px;background:#2a2f45;border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+bc+';border-radius:4px"></div></div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="color:'+dc+';font-size:13px;font-weight:700">'+dl+'</span><div style="display:flex;gap:8px"><button style="'+BS("ghost")+'padding:6px 12px;font-size:13px;" onclick="openM(\'rev-edit\','+r.id+')">Upravit</button><button style="'+BS("danger")+'padding:6px 12px;font-size:13px;" onclick="del(\'revisions\','+r.id+')">✕</button></div></div></div>';
+    }).join("");
+}
+
+function vContacts(){
+  var q=S.sq.toLowerCase();
+  var cs=(S.data.contacts||[]).filter(function(c){return!q||c.name.toLowerCase().includes(q)||(c.category||"").toLowerCase().includes(q)});
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">📞 Kontakty</h2><button style="'+BS("primary")+'" onclick="openM(\'con-new\')">+ Přidat</button></div>'+
+    '<input style="'+IS+'margin-bottom:14px;" placeholder="🔍 Hledat..." value="'+esc(S.sq)+'" oninput="S.sq=this.value;render()"/>'+
+    cs.map(function(c){return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="color:#e2e8f0;font-weight:700;font-size:16px">'+esc(c.name)+"</div>"+(c.category?'<span class="chip" style="background:#1e3a6e;color:#4f8ef7;margin-top:4px">'+esc(c.category)+"</span>":"")+'<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">'+(c.phone?'<a href="tel:'+esc(c.phone)+'" style="color:#4f8ef7;font-size:15px;text-decoration:none">📱 <span style="color:#94a3b8">'+esc(c.phone)+"</span></a>":"")+(c.email?'<a href="mailto:'+esc(c.email)+'" style="color:#4f8ef7;font-size:14px;text-decoration:none">✉ <span style="color:#94a3b8;font-size:13px">'+esc(c.email)+"</span></a>":"")+"</div>"+(c.note?'<div style="color:#64748b;font-size:12px;margin-top:8px;font-style:italic">'+esc(c.note)+"</div>":"")+'</div><div style="display:flex;flex-direction:column;gap:6px;margin-left:8px"><button style="'+BS("ghost")+'padding:6px 12px;font-size:13px;" onclick="openM(\'con-edit\','+c.id+')">Upravit</button><button style="'+BS("danger")+'padding:6px 12px;font-size:13px;" onclick="del(\'contacts\','+c.id+')">✕</button></div></div></div>'}).join("");
+}
+
+function vDefects(){
+  var sc={"Nová":"#4f8ef7","V řešení":"#f97316","Vyřešeno":"#22c55e"};
+  var ds=(S.data.defects||[]).filter(function(d){return S.df==="Vše"||d.status===S.df}).sort(function(a,b){return new Date(b.date)-new Date(a.date)});
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">🔧 Závady a opravy</h2><button style="'+BS("primary")+'" onclick="openM(\'def-new\')">+ Přidat</button></div>'+
+    '<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">'+["Vše","Nová","V řešení","Vyřešeno"].map(function(s){return'<button onclick="S.df=\''+s+'\';render()" style="background:'+(S.df===s?"#1e3a6e":"transparent")+';color:'+(S.df===s?"#4f8ef7":"#64748b")+';border:1px solid '+(S.df===s?"#4f8ef7":"#2a2f45")+';border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap">'+s+"</button>"}).join("")+"</div>"+
+    ds.map(function(d){return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><span class="chip" style="background:'+sc[d.status]+'22;color:'+sc[d.status]+'">'+esc(d.status)+'</span><span style="color:#64748b;font-size:12px">'+fmt(d.date)+"</span></div><div style=\"color:#e2e8f0;font-weight:600;font-size:15px\">"+esc(d.description)+"</div>"+(d.cost>0?'<div style="color:#f97316;font-size:13px;margin-top:4px;font-weight:600">'+Number(d.cost).toLocaleString("cs-CZ")+" Kč</div>":"")+(d.note?'<div style="color:#64748b;font-size:12px;margin-top:6px;font-style:italic">'+esc(d.note)+"</div>":"")+'</div><div style="display:flex;flex-direction:column;gap:6px"><button style="'+BS("ghost")+'padding:6px 12px;font-size:13px;" onclick="openM(\'def-edit\','+d.id+')">Upravit</button><button style="'+BS("danger")+'padding:6px 12px;font-size:13px;" onclick="del(\'defects\','+d.id+')">✕</button></div></div></div>'}).join("");
+}
+
+function vFinances(){
+  var recs=S.data.finances||[];
+  var filt=recs.filter(function(r){return new Date(r.date).getFullYear()===S.fy}).sort(function(a,b){return new Date(b.date)-new Date(a.date)});
+  var tot=filt.reduce(function(s,r){return s+r.amount},0);
+  var byCat={};filt.forEach(function(r){byCat[r.category]=(byCat[r.category]||0)+r.amount});
+  var yrs=[...new Set(recs.map(function(r){return new Date(r.date).getFullYear()}))].sort(function(a,b){return b-a});
+  if(!yrs.includes(S.fy))yrs.unshift(S.fy);
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">💰 Finance</h2><button style="'+BS("primary")+'" onclick="openM(\'fin-new\')">+ Přidat</button></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:#64748b;font-size:13px">Rok:</span><select onchange="S.fy=Number(this.value);render()" style="'+IS+'width:auto;padding:8px 12px;">'+yrs.map(function(y){return'<option value="'+y+'"'+(y===S.fy?" selected":"")+">"+y+"</option>"}).join("")+"</select></div>"+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><div style="background:#1e3a6e;border:1px solid #4f8ef733;border-radius:12px;padding:14px;grid-column:1/-1"><div style="color:#4f8ef7;font-size:22px;font-weight:800">'+tot.toLocaleString("cs-CZ")+' Kč</div><div style="color:#4f8ef7;font-size:12px;margin-top:2px">Celkem '+S.fy+"</div></div>"+
+    Object.entries(byCat).map(function(e){return'<div style="background:#1a1d27;border:1px solid #2a2f45;border-radius:12px;padding:12px 14px"><div style="color:#e2e8f0;font-size:17px;font-weight:700">'+e[1].toLocaleString("cs-CZ")+' Kč</div><div style="color:#64748b;font-size:12px;margin-top:2px">'+esc(e[0])+"</div></div>"}).join("")+"</div>"+
+    filt.map(function(r){return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1"><div style="color:#e2e8f0;font-size:15px;font-weight:600">'+esc(r.description)+'</div><div style="display:flex;gap:10px;margin-top:4px;align-items:center"><span class="chip" style="background:#1e3a6e;color:#4f8ef7">'+esc(r.category)+'</span><span style="color:#64748b;font-size:12px">'+fmt(r.date)+"</span></div></div>"+
+    '<div style="display:flex;align-items:center;gap:10px"><span style="color:#f97316;font-size:15px;font-weight:700">'+r.amount.toLocaleString("cs-CZ")+' Kč</span><button style="'+BS("danger")+'padding:6px 10px;font-size:13px;" onclick="del(\'finances\','+r.id+')">✕</button></div></div></div>'}).join("");
+}
+
+function vDocuments(){
+  var tc={"Revizní zpráva":"#22c55e","Protokol":"#4f8ef7","Smlouva":"#f97316"};
+  var docs=(S.data.documents||[]).sort(function(a,b){return new Date(b.date)-new Date(a.date)});
+  var totalBytes=docs.reduce(function(s,d){return s+(d.fileSize||0)},0);
+  var fi=function(t){return t&&t.includes("pdf")?"📄":t&&t.includes("image")?"🖼":t&&(t.includes("word")||t.includes("document"))?"📝":t&&(t.includes("sheet")||t.includes("excel"))?"📊":"📎"};
+  var dzStyle="border:2px dashed #2a2f45;border-radius:14px;padding:24px 20px;text-align:center;background:#0f1117;margin-bottom:16px";
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">📁 Dokumenty</h2><button style="'+BS("primary")+'" onclick="openM(\'doc-new\')">+ Bez souboru</button></div>'+
+    (totalBytes>0?'<div style="color:#64748b;font-size:12px;margin-bottom:10px">💾 Celkem: '+fmtSize(totalBytes)+'</div>':'')+
+    '<div style="'+dzStyle+'" ondragover="event.preventDefault();this.style.borderColor=\"#4f8ef7\"" ondragleave="this.style.borderColor=\"#2a2f45\"" ondrop="handleDrop(event)">'+
+    '<div style="font-size:32px;margin-bottom:8px">📂</div>'+
+    '<div style="color:#94a3b8;font-size:14px;font-weight:600;margin-bottom:14px">Přetáhni soubory nebo vyber:</div>'+
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'+
+    '<button onclick="document.getElementById(\'doc-cam\').click()" style="background:#1e3a6e;color:#4f8ef7;border:1px solid #4f8ef744;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">📷 Vyfotit</button>'+
+    '<button onclick="document.getElementById(\'doc-gal\').click()" style="background:#14532d;color:#22c55e;border:1px solid #22c55e44;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">🖼 Galerie</button>'+
+    '<button onclick="document.getElementById(\'doc-fil\').click()" style="background:#1a1d27;color:#94a3b8;border:1px solid #2a2f45;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">📄 Soubor</button>'+
+    '</div></div>'+
+    '<input id="doc-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFileInput(this)"/>'+
+    '<input id="doc-gal" type="file" accept="image/*" multiple style="display:none" onchange="handleFileInput(this)"/>'+
+    '<input id="doc-fil" type="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none" onchange="handleFileInput(this)"/>'+
+    '<div>'+
+    docs.map(function(d){var cl=tc[d.type]||"#4f8ef7";return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px;align-items:flex-start;flex:1;min-width:0"><span style="font-size:26px;flex-shrink:0">'+(d.fileData?fi(d.fileType):"📄")+'</span><div style="min-width:0;flex:1"><div style="color:#e2e8f0;font-weight:600;font-size:15px;word-break:break-word">'+esc(d.name)+'</div><div style="display:flex;gap:8px;margin-top:5px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:'+cl+'22;color:'+cl+'">'+esc(d.type)+'</span><span style="color:#64748b;font-size:12px">'+fmt(d.date)+'</span>'+(d.fileSize?'<span style="color:#64748b;font-size:11px">'+fmtSize(d.fileSize)+'</span>':'')+'</div>'+(d.note?'<div style="color:#64748b;font-size:12px;margin-top:6px;font-style:italic">'+esc(d.note)+'</div>':'')+'</div></div><div style="display:flex;gap:6px;margin-left:8px;flex-shrink:0">'+(d.fileData?'<button style="'+BS("success")+'padding:6px 10px;font-size:13px;" onclick="dlDoc('+d.id+')" title="Stáhnout">⬇</button>':'')+'<button style="'+BS("danger")+'padding:6px 10px;font-size:13px;" onclick="del(\'documents\','+d.id+')">✕</button></div></div></div>'}).join('')+
+    '</div>';
+}
+
+function handleDrop(e){e.preventDefault();var dz=document.querySelector(".dz");if(dz)dz.classList.remove("over");processFiles(Array.from(e.dataTransfer.files))}
+function handleFileInput(inp){processFiles(Array.from(inp.files));inp.value=""}
+function processFiles(files){
+  files.forEach(function(file){
+    var n=file.name.toLowerCase();
+    var type=n.includes("reviz")?"Revizní zpráva":n.includes("protokol")?"Protokol":n.includes("smlouva")||n.includes("pojist")?"Smlouva":"Jiné";
+    showSaveStatus("⏳ Nahrávám...", "#f97316");
+    if(file.type.startsWith("image/")){
+      // Compress image before saving
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=new Image();
+        img.onload=function(){
+          var canvas=document.createElement("canvas");
+          var MAX=1200;
+          var w=img.width, h=img.height;
+          if(w>h&&w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+          else if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+          canvas.width=w; canvas.height=h;
+          canvas.getContext("2d").drawImage(img,0,0,w,h);
+          var compressed=canvas.toDataURL("image/jpeg",0.75);
+          var sz=Math.round(compressed.length*0.75);
+          mut(function(d){d.documents.push({id:uid(),name:file.name,type:type,date:today(),note:"",fileData:compressed,fileType:"image/jpeg",fileSize:sz})});
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Non-image file — read as-is
+      var reader=new FileReader();
+      reader.onload=function(e){
+        mut(function(d){d.documents.push({id:uid(),name:file.name,type:type,date:today(),note:"",fileData:e.target.result,fileType:file.type,fileSize:file.size})});
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function showSaveStatus(msg, color){
+  var sv=document.getElementById("sv");
+  if(sv){sv.style.color=color||"#22c55e";sv.textContent=msg;sv.style.opacity="1";}
+}
+function dlDoc(id){var d=(S.data.documents||[]).find(function(x){return x.id===id});if(!d||!d.fileData)return;var a=document.createElement("a");a.href=d.fileData;a.download=d.name;a.click()}
+
+function mWrap(title,body,sub){
+  return '<div id="mb" onclick="if(event.target.id===\'mb\')closeM()" style="position:fixed;inset:0;background:#000c;display:flex;align-items:flex-end;justify-content:center;z-index:1000">'+
+    '<div style="background:#1a1d27;border:1px solid #2a2f45;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto">'+
+    '<div style="width:40px;height:4px;background:#2a2f45;border-radius:2px;margin:0 auto 16px"></div>'+
+    '<h3 style="color:#e2e8f0;margin-bottom:16px;font-weight:700;font-size:18px">'+title+"</h3>"+
+    '<div style="display:flex;flex-direction:column;gap:10px">'+body+"</div>"+
+    '<div style="display:flex;gap:10px;margin-top:16px"><button style="'+BS("primary")+'flex:1;" onclick="'+sub+'">Uložit</button><button style="'+BS("ghost")+'flex:1;" onclick="closeM()">Zrušit</button></div></div></div>';
+}
+
+function openM(type,id){
+  var d=S.data,html="";
+  if(type==="rev-new")html=mWrap("Nová revize",inp("ft","Typ revize *")+lbl("Datum poslední revize")+inp("fd","","date",today())+inp("fi2","Interval (roky)","number","1")+inp("fc","Firma / technik")+ta("fn","Poznámka"),"saveRev(null)");
+  else if(type==="rev-edit"){var r=d.revisions.find(function(x){return x.id===id});if(!r)return;html=mWrap("Upravit revizi",inp("ft","Typ *","text",r.type)+lbl("Datum poslední revize")+inp("fd","","date",r.lastDate)+inp("fi2","Interval (roky)","number",r.intervalYears)+inp("fc","Firma","text",r.company)+ta("fn","Poznámka",r.note),"saveRev("+id+")")}
+  else if(type==="con-new")html=mWrap("Nový kontakt",inp("fn2","Název / jméno *")+inp("fp","Telefon","tel")+inp("fe","E-mail","email")+inp("fk","Kategorie")+ta("fno","Poznámka"),"saveCon(null)");
+  else if(type==="con-edit"){var c=d.contacts.find(function(x){return x.id===id});if(!c)return;html=mWrap("Upravit kontakt",inp("fn2","Název *","text",c.name)+inp("fp","Telefon","tel",c.phone)+inp("fe","E-mail","email",c.email)+inp("fk","Kategorie","text",c.category)+ta("fno","Poznámka",c.note),"saveCon("+id+")")}
+  else if(type==="def-new")html=mWrap("Nová závada",lbl("Datum")+inp("fd2","","date",today())+ta("fde","Popis závady *")+sel("fst",["Nová","V řešení","Vyřešeno"],"Nová")+inp("fco","Náklady (Kč)","number","0")+ta("fno2","Poznámka"),"saveDef(null)");
+  else if(type==="def-edit"){var x=d.defects.find(function(x){return x.id===id});if(!x)return;html=mWrap("Upravit závadu",lbl("Datum")+inp("fd2","","date",x.date)+ta("fde","Popis *",x.description)+sel("fst",["Nová","V řešení","Vyřešeno"],x.status)+inp("fco","Náklady (Kč)","number",x.cost)+ta("fno2","Poznámka",x.note),"saveDef("+id+")")}
+  else if(type==="fin-new")html=mWrap("Nový výdaj",lbl("Datum")+inp("fd3","","date",today())+inp("fde2","Popis *")+sel("fca",["Revize","Oprava","Správa","Energie","Pojištění","Jiné"],"Revize")+inp("fam","Částka (Kč) *","number"),"saveFin()");
+  else if(type==="doc-new")html=mWrap("Nový záznam (bez souboru)",inp("fna","Název dokumentu *")+sel("fty",["Revizní zpráva","Protokol","Smlouva","Projektová dokumentace","Pojistná smlouva","Jiné"],"Revizní zpráva")+lbl("Datum dokumentu")+inp("fd4","","date",today())+inp("fno3","Poznámka (platnost, číslo...)"),"saveDoc()");
+  var el=document.createElement("div");el.id="modal-root";el.innerHTML=html;document.body.appendChild(el);
+}
+function closeM(){var e=document.getElementById("modal-root");if(e)e.remove()}
+function saveRev(id){var t=g("ft").trim();if(!t)return;var rec={type:t,lastDate:g("fd")||today(),intervalYears:Number(g("fi2"))||1,company:g("fc"),note:g("fn")};mut(function(d){if(id)d.revisions=d.revisions.map(function(x){return x.id===id?Object.assign({},x,rec):x});else d.revisions.push(Object.assign({id:uid()},rec))});closeM()}
+function saveCon(id){var n=g("fn2").trim();if(!n)return;var rec={name:n,phone:g("fp"),email:g("fe"),category:g("fk"),note:g("fno")};mut(function(d){if(id)d.contacts=d.contacts.map(function(x){return x.id===id?Object.assign({},x,rec):x});else d.contacts.push(Object.assign({id:uid()},rec))});closeM()}
+function saveDef(id){var desc=g("fde").trim();if(!desc)return;var rec={date:g("fd2")||today(),description:desc,status:g("fst")||"Nová",cost:Number(g("fco"))||0,note:g("fno2")};mut(function(d){if(id)d.defects=d.defects.map(function(x){return x.id===id?Object.assign({},x,rec):x});else d.defects.push(Object.assign({id:uid()},rec))});closeM()}
+function saveFin(){var desc=g("fde2").trim(),amt=Number(g("fam"));if(!desc||!amt)return;mut(function(d){d.finances.push({id:uid(),date:g("fd3")||today(),description:desc,category:g("fca")||"Jiné",amount:amt})});closeM()}
+function saveDoc(){var n=g("fna").trim();if(!n)return;mut(function(d){d.documents.push({id:uid(),name:n,type:g("fty")||"Jiné",date:g("fd4")||today(),note:g("fno3"),fileData:null,fileType:null,fileSize:null})});closeM()}
+function del(col,id){
+  const el=document.createElement('div');
+  el.id='confirm-root';
+  el.innerHTML='<div onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:2000;padding:20px"><div style="background:#1a1d27;border:1px solid #ef444444;border-radius:16px;padding:24px 22px;width:100%;max-width:320px;text-align:center"><div style="font-size:36px;margin-bottom:12px">&#128465;</div><div style="color:#e2e8f0;font-size:17px;font-weight:700;margin-bottom:6px">Smazat položku?</div><div style="color:#64748b;font-size:14px;margin-bottom:22px">Tuto akci nelze vrátit zpět.</div><div style="display:flex;gap:10px"><button onclick="document.getElementById(\'confirm-root\').remove()" style="flex:1;background:transparent;color:#94a3b8;border:1px solid #2a2f45;border-radius:10px;padding:11px;font-size:15px;font-weight:600;cursor:pointer">Zrušit</button><button id="confirm-yes" style="flex:1;background:#7f1d1d;color:#ef4444;border:1px solid #ef444444;border-radius:10px;padding:11px;font-size:15px;font-weight:600;cursor:pointer">Smazat</button></div></div></div>';
+  document.body.appendChild(el);
+  document.getElementById('confirm-yes').onclick=function(){
+    mut(function(d){d[col]=d[col].filter(function(x){return x.id!==id})});
+    el.remove();
+  };
+}
+
+var TABS=[{id:"dashboard",label:"Přehled",icon:"🏠"},{id:"revize",label:"Revize",icon:"📋"},{id:"kontakty",label:"Kontakty",icon:"📞"},{id:"zavady",label:"Závady",icon:"🔧"},{id:"finance",label:"Finance",icon:"💰"},{id:"dokumenty",label:"Doklady",icon:"📁"}];
+var VIEWS={dashboard:vDashboard,revize:vRevisions,kontakty:vContacts,zavady:vDefects,finance:vFinances,dokumenty:vDocuments};
+
+function render(){
+  if(!GH_TOKEN){renderSetup();return}
+  if(!S.user){renderAuth();return}
+  var mob=window.innerWidth<768;
+  var content=(VIEWS[S.tab]||vDashboard)();
+  var sidebar=!mob?'<div style="position:fixed;left:0;top:0;bottom:0;width:210px;background:#1a1d27;border-right:1px solid #2a2f45;display:flex;flex-direction:column;z-index:100">'+
+    '<div style="padding:20px 18px 14px;border-bottom:1px solid #2a2f45"><div style="color:#4f8ef7;font-size:17px;font-weight:800">🏢 Správce domu</div><div style="color:#64748b;font-size:11px;margin-top:3px">👤 '+esc(S.user)+"</div></div>"+
+    '<nav style="padding:12px 8px;flex:1">'+TABS.map(function(t){return'<div onclick="setTab(\''+t.id+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;background:'+(S.tab===t.id?"#1e3a6e":"transparent")+';color:'+(S.tab===t.id?"#4f8ef7":"#94a3b8")+';font-weight:'+(S.tab===t.id?700:400)+';font-size:14px">'+t.icon+" "+t.label+"</div>"}).join("")+"</nav>"+
+    '<div style="padding:12px 14px;border-top:1px solid #2a2f45"><div id="sv" style="color:#22c55e;font-size:12px;opacity:0;transition:opacity .3s;margin-bottom:8px">✓ Uloženo</div><button onclick="logout()" style="'+BS("ghost")+'padding:7px 14px;font-size:13px;width:100%;">🚪 Odhlásit</button></div></div>':"";
+  var topbar=mob?'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="color:#4f8ef7;font-size:16px;font-weight:800">🏢 Správce domu</div><div style="display:flex;align-items:center;gap:10px"><div id="sv" style="color:#22c55e;font-size:12px;opacity:0;transition:opacity .3s">✓</div><button onclick="logout()" style="'+BS("ghost")+'padding:6px 12px;font-size:12px;">🚪</button></div></div>':"";
+  var botnav=mob?'<div style="position:fixed;bottom:0;left:0;right:0;height:64px;background:#1a1d27;border-top:1px solid #2a2f45;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)">'+TABS.map(function(t){return'<button onclick="setTab(\''+t.id+'\')" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:'+(S.tab===t.id?"#4f8ef7":"#64748b")+';padding:6px 2px"><span style="font-size:20px">'+t.icon+'</span><span style="font-size:9px;font-weight:'+(S.tab===t.id?700:400)+';font-family:inherit">'+t.label+"</span>"+(S.tab===t.id?'<div style="width:4px;height:4px;background:#4f8ef7;border-radius:2px"></div>':"")+"</button>"}).join("")+"</div>":"";
+  document.getElementById("app").innerHTML=sidebar+'<div style="margin-left:'+(mob?0:210)+'px;padding:'+(mob?"14px":"24px 28px")+';padding-bottom:'+(mob?80:24)+'px;max-width:'+(mob?"100%":"880px")+'">'+topbar+content+"</div>"+botnav;
+}
+
+window.addEventListener("resize",function(){if(S.user&&GH_TOKEN)render();});
+initSession().then(function(){render();});
+
+if('serviceWorker' in navigator){
+  var swCode="self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return new Response('',{status:503})}))})";
+  var swBlob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
+}
+
+</script>
+<script>
+// PWA manifest with base64 PNG icons
+(function(){
+  var mf = {
+    name: "Správce domu",
+    short_name: "Správce",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#0f1117",
+    theme_color: "#0f1117",
+    icons: [
+      {src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFaUlEQVR4nO3dPW4USxiF4ZqRAxbgCAnJGSkJIiVnA2yDBRB5AWyDDZA7RSSkzpAsOWIBZBBYjZphpn+r6vs57xNegadcdU7X17bEPZTKnr94+bv21wQGjw/3h5pfb/cXI/CwtLcQm/8ywYcnW4uw+i8RfHi2tgjHNX+Y8MO7tRld1BaCj4iW3AazNwDhR1RLsjtZAMKP6OYyfLEAhB9ZTGX5bAEIP7K5lOlVPwUCsvmvADz9kdW5bB/n/gCQyWnGGYEg7W8BePpDxTjr3ACQdiyFpz/0DJnnBoA0CgBpFADSDsz/UMYNAGkUANIogLFnn99YL0EaBTA0hJ8S2OEl2MBU4H+9/9pxJeAG6Gzuac9t0BcF6GhpuClBPxSgk7WhpgR98A7QWI0g817QDjdAQ7We4twG7VCARmqHlhK0wQhUWeugMg7VRQEq6vmUpgh1MAJV0ntEYSSqgwJUYBVGSrAfI9AOXgLIOLQdBdjIS/jHKMJ6jEAbeAx/KX7X5RkFWMl7yLyvzxtGoIWiBYtxaBkKsEC08I9RhGmMQDMih7+U+OtvjRvggmzB4SY4jwKckS38YxThX4xAJzKHv5T8399aFGBEJRwq3+cSjEBFNxCMQxRANvxjykWQHoEI/xPlfZC8AZQPfIriTSB3AxD+yxT3RuoGUDzgrVRuA5kbgPCvo7Jf6W8AlYNsJftNkPoGIPz7Zd/DtDdA9oOzkPE2SFcAgt9WthKkGoEIf3vZ9jhNAbIdjGeZ9jrFCJTpQKKJPhKFLgDB9yFyCcKOQITfj8hnEfIGiLzh2UW7DUIVgODHEKkEYUYgwh9HpLMKUYBIG4onUc7M/QgUZSNxmeeRyG0BCH4uXkvgcgQi/Pl4PVN3BfC6UdjP49m6GoE8bhDa8DISuSgAwdfkoQTmIxDh1+Xh7E0L4GEDYMs6AyYjkPU3DZ8sRqLuNwDhxyUW2ehaAMKPOb0z0q0AhB9L9cxK83cAgo89Wr8XNL0BCD/2ap0hF78IK6WU1x++Wy8BHX379Mp6CaUUB78IAyxRAEi7sl7AXne3N196f+bbjz/e9f7MJdiL9ULfABYHbvm5U9iLbcIWwHrjrT9/zHot1p+/R9gCADVQAEijAJBGASCNAkAaBYA0CgBpFADSKACkUQBIowCQRgEgjQJAGgWANAoAaRQA0igApFEASKMAkEYBII0CQBoFgDQKAGkUANLC/9OIRq5LKeXu9sb+//P55LqU8tN6ERFRgHWurRcwYVgbRViBEQjSKMBynp/+Y1HW6ULYAkT/Z7kziXwWYQtQSuyNzyL6GYR/Ce51AI5+4jMreih7Cn0DAHtRAEijAJBGASCNAkAaBYA0CgBpFADSKACkUQBIowCQRgEgjQJAGgWANAoAaRQA0igApFEASKMAkEYBII0CQBoFgDQKAGkUANIoAKRRAEijAJBGASCNAkAaBYA0CgBpFADSKACkUQBIowCQRgEgjQJAGgWANAoAaRQA0igApFEASKMAkEYBII0CQBoFgDQKAGkUANIoAKRRAEijAJBGASDNTQG+fXplvQR04ums3RQAsHB8fLg/WC9i4OnJgDY8nfHjw/2BGwDS3BXA0xNi7O3HH2+s17CE53V6PNsr6wWcM2zU6w/fTdeBOjwGf/B3/n/+4uVvy4VM8VaEu9ubr9ZrOOXxye85+MO7b4gCALUNBTie/gcgu3HW3b0EAz39UwBuAWR3mvH/bgBKgKzOZZsRCNLOFoBbANlcyvTFG4ASIIupLE+OQJQA0c1lePYdgBIgqiXZXRVufluMCNY8tFf9FIjbAN6tzejmQHMbwJOtD+fdT3SKAEt7p5LqIw2FQEu1x/A/OfprTN4o8FkAAAAASUVORK5CYII=", sizes: "192x192", type: "image/png", purpose: "any maskable"},
+      {src: "data:image/png;base64,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
