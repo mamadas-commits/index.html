@@ -223,6 +223,14 @@ function saveSetup(){
   render();
 }
 
+function showAuthErr(msg){
+  var el=document.getElementById('auth-err');
+  if(el){
+    el.textContent='⚠ '+msg;
+    el.style.display='block';
+  }
+}
+
 function renderAuth(){
   var isL=S.aMode==="login";
   var hasU=AUTH.getUsers().length>0;
@@ -253,19 +261,19 @@ function renderAuth(){
 function doLogin(){
   var u=(document.getElementById("au")||{value:""}).value.trim();
   var p=(document.getElementById("ap")||{value:""}).value;
-  if(!u||!p){S.aErr="Vyplňte uživatelské jméno a heslo";render();return}
-  if(!AUTH.verify(u,p)){S.aErr="Nesprávné jméno nebo heslo";render();return}
+  if(!u||!p){showAuthErr("Vyplňte uživatelské jméno a heslo");return}
+  if(!AUTH.verify(u,p)){showAuthErr("Nesprávné jméno nebo heslo");return}
   AUTH.session.set(u);S.user=u;showLoading(true);DB.load(u).then(function(d){S.data=d;showLoading(false);S.aErr="";render();});
 }
 function doReg(){
   var u=(document.getElementById("au")||{value:""}).value.trim();
   var p=(document.getElementById("ap")||{value:""}).value;
   var p2=(document.getElementById("ap2")||{value:""}).value;
-  if(!u||!p){S.aErr="Vyplňte všechna pole";render();return}
-  if(u.length<3){S.aErr="Jméno musí mít alespoň 3 znaky";render();return}
-  if(p.length<4){S.aErr="Heslo musí mít alespoň 4 znaky";render();return}
-  if(p!==p2){S.aErr="Hesla se neshodují";render();return}
-  if(!AUTH.addUser(u,p)){S.aErr="Toto uživatelské jméno je již obsazeno";render();return}
+  if(!u||!p){showAuthErr("Vyplňte všechna pole");return}
+  if(u.length<3){showAuthErr("Jméno musí mít alespoň 3 znaky");return}
+  if(p.length<4){showAuthErr("Heslo musí mít alespoň 4 znaky");return}
+  if(p!==p2){showAuthErr("Hesla se neshodují");return}
+  if(!AUTH.addUser(u,p)){showAuthErr("Toto uživatelské jméno je již obsazeno");return}
   AUTH.session.set(u);S.user=u;showLoading(true);DB.load(u).then(function(d){S.data=d;showLoading(false);S.aErr="";render();});
 }
 
@@ -427,7 +435,7 @@ function render(){
   document.getElementById("app").innerHTML=sidebar+'<div style="margin-left:'+(mob?0:210)+'px;padding:'+(mob?"14px":"24px 28px")+';padding-bottom:'+(mob?80:24)+'px;max-width:'+(mob?"100%":"880px")+'">'+topbar+content+"</div>"+botnav;
 }
 
-window.addEventListener("resize",render);
+window.addEventListener("resize",function(){if(S.user&&GH_TOKEN)render();});
 initSession().then(function(){render();});
 
 if('serviceWorker' in navigator){
