@@ -1,23 +1,6 @@
 {
   "mamadas": {
-    "revisions": [
-      {
-        "id": 1,
-        "type": "Elektroinstalace",
-        "lastDate": "2023-03-15",
-        "intervalYears": 5,
-        "company": "Elektro Novák s.r.o.",
-        "note": "Dle ČSN 33 1500"
-      },
-      {
-        "id": 2,
-        "type": "Hromosvod",
-        "lastDate": "2022-11-10",
-        "intervalYears": 4,
-        "company": "Bleskojist Praha",
-        "note": ""
-      }
-    ],
+    "revisions": [],
     "contacts": [],
     "defects": [],
     "finances": [
