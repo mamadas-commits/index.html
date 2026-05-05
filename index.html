@@ -355,14 +355,23 @@ function vDocuments(){
   var docs=(S.data.documents||[]).sort(function(a,b){return new Date(b.date)-new Date(a.date)});
   var totalBytes=docs.reduce(function(s,d){return s+(d.fileSize||0)},0);
   var fi=function(t){return t&&t.includes("pdf")?"📄":t&&t.includes("image")?"🖼":t&&(t.includes("word")||t.includes("document"))?"📝":t&&(t.includes("sheet")||t.includes("excel"))?"📊":"📎"};
+  var dzStyle="border:2px dashed #2a2f45;border-radius:14px;padding:24px 20px;text-align:center;background:#0f1117;margin-bottom:16px";
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="color:#e2e8f0;font-size:20px;font-weight:700">📁 Dokumenty</h2><button style="'+BS("primary")+'" onclick="openM(\'doc-new\')">+ Bez souboru</button></div>'+
-    (totalBytes>0?'<div style="color:#64748b;font-size:12px;margin-bottom:10px">💾 Soubory celkem: '+fmtSize(totalBytes)+"</div>":"")+
-    '<div class="dz" onclick="document.getElementById(\'fi\').click()" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="handleDrop(event)">'+
-    '<div style="font-size:32px;margin-bottom:8px">📂</div><div style="color:#94a3b8;font-size:15px;font-weight:600">Přetáhni soubory sem</div>'+
-    '<div style="color:#64748b;font-size:13px;margin-top:4px">nebo klikni pro výběr</div>'+
-    '<div style="color:#64748b;font-size:11px;margin-top:8px">PDF, obrázky, Word, Excel...</div></div>'+
-    '<input id="fi" type="file" multiple style="display:none" onchange="handleFileInput(this)"/>'+
-    docs.map(function(d){var cl=tc[d.type]||"#4f8ef7";return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px;align-items:flex-start;flex:1;min-width:0"><span style="font-size:26px;flex-shrink:0">'+(d.fileData?fi(d.fileType):"📄")+'</span><div style="min-width:0;flex:1"><div style="color:#e2e8f0;font-weight:600;font-size:15px;word-break:break-word">'+esc(d.name)+'</div><div style="display:flex;gap:8px;margin-top:5px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:'+cl+'22;color:'+cl+'">'+esc(d.type)+'</span><span style="color:#64748b;font-size:12px">'+fmt(d.date)+"</span>"+(d.fileSize?'<span style="color:#64748b;font-size:11px">'+fmtSize(d.fileSize)+"</span>":"")+"</div>"+(d.note?'<div style="color:#64748b;font-size:12px;margin-top:6px;font-style:italic">'+esc(d.note)+"</div>":"")+'</div></div><div style="display:flex;gap:6px;margin-left:8px;flex-shrink:0">'+(d.fileData?'<button style="'+BS("success")+'padding:6px 10px;font-size:13px;" onclick="dlDoc('+d.id+')" title="Stáhnout">⬇</button>':'')+'<button style="'+BS("danger")+'padding:6px 10px;font-size:13px;" onclick="del(\'documents\','+d.id+')">✕</button></div></div></div>'}).join("");
+    (totalBytes>0?'<div style="color:#64748b;font-size:12px;margin-bottom:10px">💾 Celkem: '+fmtSize(totalBytes)+'</div>':'')+
+    '<div style="'+dzStyle+'" ondragover="event.preventDefault();this.style.borderColor=\"#4f8ef7\"" ondragleave="this.style.borderColor=\"#2a2f45\"" ondrop="handleDrop(event)">'+
+    '<div style="font-size:32px;margin-bottom:8px">📂</div>'+
+    '<div style="color:#94a3b8;font-size:14px;font-weight:600;margin-bottom:14px">Přetáhni soubory nebo vyber:</div>'+
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'+
+    '<button onclick="document.getElementById(\'doc-cam\').click()" style="background:#1e3a6e;color:#4f8ef7;border:1px solid #4f8ef744;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">📷 Vyfotit</button>'+
+    '<button onclick="document.getElementById(\'doc-gal\').click()" style="background:#14532d;color:#22c55e;border:1px solid #22c55e44;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">🖼 Galerie</button>'+
+    '<button onclick="document.getElementById(\'doc-fil\').click()" style="background:#1a1d27;color:#94a3b8;border:1px solid #2a2f45;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer">📄 Soubor</button>'+
+    '</div></div>'+
+    '<input id="doc-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFileInput(this)"/>'+
+    '<input id="doc-gal" type="file" accept="image/*" multiple style="display:none" onchange="handleFileInput(this)"/>'+
+    '<input id="doc-fil" type="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none" onchange="handleFileInput(this)"/>'+
+    '<div>'+
+    docs.map(function(d){var cl=tc[d.type]||"#4f8ef7";return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px;align-items:flex-start;flex:1;min-width:0"><span style="font-size:26px;flex-shrink:0">'+(d.fileData?fi(d.fileType):"📄")+'</span><div style="min-width:0;flex:1"><div style="color:#e2e8f0;font-weight:600;font-size:15px;word-break:break-word">'+esc(d.name)+'</div><div style="display:flex;gap:8px;margin-top:5px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:'+cl+'22;color:'+cl+'">'+esc(d.type)+'</span><span style="color:#64748b;font-size:12px">'+fmt(d.date)+'</span>'+(d.fileSize?'<span style="color:#64748b;font-size:11px">'+fmtSize(d.fileSize)+'</span>':'')+'</div>'+(d.note?'<div style="color:#64748b;font-size:12px;margin-top:6px;font-style:italic">'+esc(d.note)+'</div>':'')+'</div></div><div style="display:flex;gap:6px;margin-left:8px;flex-shrink:0">'+(d.fileData?'<button style="'+BS("success")+'padding:6px 10px;font-size:13px;" onclick="dlDoc('+d.id+')" title="Stáhnout">⬇</button>':'')+'<button style="'+BS("danger")+'padding:6px 10px;font-size:13px;" onclick="del(\'documents\','+d.id+')">✕</button></div></div></div>'}).join('')+
+    '</div>';
 }
 
 function handleDrop(e){e.preventDefault();var dz=document.querySelector(".dz");if(dz)dz.classList.remove("over");processFiles(Array.from(e.dataTransfer.files))}
