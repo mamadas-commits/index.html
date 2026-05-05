@@ -1,0 +1,114 @@
+{
+  "mamadas": {
+    "revisions": [
+      {
+        "id": 1,
+        "type": "Elektroinstalace",
+        "lastDate": "2023-03-15",
+        "intervalYears": 5,
+        "company": "Elektro Novák s.r.o.",
+        "note": "Dle ČSN 33 1500"
+      },
+      {
+        "id": 2,
+        "type": "Hromosvod",
+        "lastDate": "2022-11-10",
+        "intervalYears": 4,
+        "company": "Bleskojist Praha",
+        "note": ""
+      },
+      {
+        "id": 3,
+        "type": "Hasicí přístroje",
+        "lastDate": "2024-01-20",
+        "intervalYears": 1,
+        "company": "Požární technika Brno",
+        "note": "5x práškový, 2x CO₂"
+      },
+      {
+        "id": 4,
+        "type": "Střecha / fasáda",
+        "lastDate": "2023-06-01",
+        "intervalYears": 3,
+        "company": "",
+        "note": "Vizuální prohlídka"
+      },
+      {
+        "id": 5,
+        "type": "Centrální vytápění - plyn",
+        "lastDate": "2024-02-14",
+        "intervalYears": 1,
+        "company": "GasServis Pardubice",
+        "note": "Kotel Vaillant 24 kW"
+      }
+    ],
+    "contacts": [
+      {
+        "id": 1,
+        "name": "Elektro Novák s.r.o.",
+        "phone": "+420 466 123 456",
+        "email": "novak@elektro.cz",
+        "category": "Elektro",
+        "note": ""
+      },
+      {
+        "id": 2,
+        "name": "GasServis Pardubice",
+        "phone": "+420 466 654 321",
+        "email": "info@gasservis.cz",
+        "category": "Plyn/Topení",
+        "note": "Havarijní linka 24/7"
+      },
+      {
+        "id": 3,
+        "name": "Požární technika Brno",
+        "phone": "+420 545 111 222",
+        "email": "revize@pozarni.cz",
+        "category": "Hasicí technika",
+        "note": ""
+      }
+    ],
+    "defects": [
+      {
+        "id": 1,
+        "date": "2024-11-05",
+        "description": "Prasklina na fasádě – severní strana",
+        "status": "V řešení",
+        "cost": 0,
+        "note": "Čeká se na nabídku"
+      },
+      {
+        "id": 2,
+        "date": "2024-08-12",
+        "description": "Výměna ventilu na topení",
+        "status": "Vyřešeno",
+        "cost": 1850,
+        "note": "GasServis fa 2024/445"
+      }
+    ],
+    "finances": [
+      {
+        "id": 1,
+        "date": "2024-02-14",
+        "description": "Revize kotle",
+        "category": "Revize",
+        "amount": 3200
+      },
+      {
+        "id": 2,
+        "date": "2024-01-20",
+        "description": "Revize hasicích přístrojů",
+        "category": "Revize",
+        "amount": 2100
+      },
+      {
+        "id": 3,
+        "date": "2024-08-12",
+        "description": "Oprava ventilu topení",
+        "category": "Oprava",
+        "amount": 1850
+      }
+    ],
+    "documents": []
+  }
+}
