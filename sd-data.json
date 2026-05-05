@@ -44,14 +44,6 @@
     ],
     "contacts": [
       {
-        "id": 1,
-        "name": "Elektro Novák s.r.o.",
-        "phone": "+420 466 123 456",
-        "email": "novak@elektro.cz",
-        "category": "Elektro",
-        "note": ""
-      },
-      {
         "id": 2,
         "name": "GasServis Pardubice",
         "phone": "+420 466 654 321",
@@ -68,16 +60,7 @@
         "note": ""
       }
     ],
-    "defects": [
-      {
-        "id": 2,
-        "date": "2024-08-12",
-        "description": "Výměna ventilu na topení",
-        "status": "Vyřešeno",
-        "cost": 1850,
-        "note": "GasServis fa 2024/445"
-      }
-    ],
+    "defects": [],
     "finances": [
       {
         "id": 1,
