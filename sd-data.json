@@ -24,6 +24,13 @@
         "description": "Oprava ventilu topení",
         "category": "Oprava",
         "amount": 1850
+      },
+      {
+        "id": 1777987683714,
+        "date": "2026-05-05",
+        "description": "hlavice radiátory",
+        "category": "Energie",
+        "amount": 450
       }
     ],
     "documents": []
