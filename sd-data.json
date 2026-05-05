@@ -16,22 +16,6 @@
         "intervalYears": 4,
         "company": "Bleskojist Praha",
         "note": ""
-      },
-      {
-        "id": 4,
-        "type": "Střecha / fasáda",
-        "lastDate": "2023-06-01",
-        "intervalYears": 3,
-        "company": "",
-        "note": "Vizuální prohlídka"
-      },
-      {
-        "id": 5,
-        "type": "Centrální vytápění - plyn",
-        "lastDate": "2024-02-14",
-        "intervalYears": 1,
-        "company": "GasServis Pardubice",
-        "note": "Kotel Vaillant 24 kW"
       }
     ],
     "contacts": [],
